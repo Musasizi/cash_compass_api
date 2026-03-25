@@ -1,12 +1,12 @@
 {
-  "name": "express-mysql-app",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "walletwise-api",
+  "version": "2.0.0",
+  "description": "WalletWise Personal Finance Tracker API",
+  "main": "server.js",
   "scripts": {
     "start": "nodemon server.js",
     "seed": "node scripts/seed.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest --runInBand"
   },
   "keywords": [],
   "author": "",
@@ -16,10 +16,13 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.3",
-    "mysql2": "^3.13.0"
+    "mysql2": "^3.13.0",
+    "node-cron": "^3.0.3"
   },
   "devDependencies": {
+    "jest": "^29.7.0",
     "nodemon": "^3.1.9"
   }
 }

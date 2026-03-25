@@ -1,3 +1,11 @@
+/**
+ * scripts/seed.js – WalletWise database schema bootstrap + seed data
+ *
+ * Run with:  npm run seed
+ *
+ * IDEMPOTENT: tables use IF NOT EXISTS, rows use INSERT IGNORE.
+ */
+
 const mysql = require('mysql2/promise');
 const bcrypt = require('bcryptjs');
 const dotenv = require('dotenv');
@@ -5,19 +13,19 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 async function seed() {
-    const db = await mysql.createConnection({
-        host: process.env.DB_HOST,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_DATABASE,
-        port: process.env.DB_PORT,
-    });
+  const db = await mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_DATABASE,
+    port: Number(process.env.DB_PORT) || 3306,
+  });
 
-    console.log('Connected to database. Running seed...\n');
+  console.log('Connected to database. Running WalletWise seed…\n');
 
-    // ── Schema ─────────────────────────────────────────────────────────────────
+  // ── Schema ─────────────────────────────────────────────────────────────────
 
-    await db.execute(`
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS users (
       id          INT AUTO_INCREMENT PRIMARY KEY,
       username    VARCHAR(100) NOT NULL UNIQUE,
@@ -26,112 +34,168 @@ async function seed() {
       created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `);
-    console.log('✔  Table: users');
+  console.log('✔  Table: users');
 
-    await db.execute(`
-    CREATE TABLE IF NOT EXISTS chapters (
-      id           INT AUTO_INCREMENT PRIMARY KEY,
-      name         VARCHAR(150) NOT NULL,
-      description  TEXT,
-      chapter_type ENUM('lecture','lab','tutorial','seminar','workshop') DEFAULT 'lecture',
-      status       ENUM('active','archived') DEFAULT 'active',
-      created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS income_type (
+      id          INT AUTO_INCREMENT PRIMARY KEY,
+      name        VARCHAR(100) NOT NULL UNIQUE,
+      description TEXT
     )
   `);
-    // Add new columns if they don't exist yet (idempotent re-runs)
-    await db.execute(`
-      ALTER TABLE chapters
-        ADD COLUMN IF NOT EXISTS chapter_type ENUM('lecture','lab','tutorial','seminar','workshop') DEFAULT 'lecture',
-        ADD COLUMN IF NOT EXISTS status ENUM('active','archived') DEFAULT 'active'
-    `).catch(() => { }); // Silently skip if columns already exist
-    console.log('✔  Table: chapters (with chapter_type + status)');
+  console.log('✔  Table: income_type');
 
-    await db.execute(`
-    CREATE TABLE IF NOT EXISTS user_chapters (
-      user_id     INT NOT NULL,
-      chapter_id  INT NOT NULL,
-      PRIMARY KEY (user_id, chapter_id),
-      FOREIGN KEY (user_id)    REFERENCES users(id)    ON DELETE CASCADE,
-      FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS expense_type (
+      id_expense  INT AUTO_INCREMENT PRIMARY KEY,
+      name        VARCHAR(100) NOT NULL UNIQUE,
+      description TEXT
     )
   `);
-    console.log('✔  Table: user_chapters\n');
+  console.log('✔  Table: expense_type');
 
-    // ── Seed users ─────────────────────────────────────────────────────────────
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS income (
+      id              INT AUTO_INCREMENT PRIMARY KEY,
+      amount          DECIMAL(15,2) NOT NULL,
+      date_created    DATE NOT NULL DEFAULT (CURDATE()),
+      income_type_id  INT NOT NULL,
+      FOREIGN KEY (income_type_id) REFERENCES income_type(id) ON DELETE RESTRICT
+    )
+  `);
+  console.log('✔  Table: income');
 
-    const users = [
-        { username: 'alice', email: 'alice@example.com', password: 'password123' },
-        { username: 'bob', email: 'bob@example.com', password: 'password123' },
-        { username: 'charlie', email: 'charlie@example.com', password: 'password123' },
-        { username: 'diana', email: 'diana@example.com', password: 'password123' },
-    ];
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS expense (
+      id                  INT AUTO_INCREMENT PRIMARY KEY,
+      name_expense        VARCHAR(200) NOT NULL,
+      amount              DECIMAL(15,2) NOT NULL,
+      amount_expenditure  DECIMAL(15,2) NOT NULL,
+      date_created        DATE NOT NULL DEFAULT (CURDATE()),
+      id_expense          INT NOT NULL,
+      FOREIGN KEY (id_expense) REFERENCES expense_type(id_expense) ON DELETE RESTRICT
+    )
+  `);
+  console.log('✔  Table: expense');
 
-    for (const u of users) {
-        const hash = await bcrypt.hash(u.password, 10);
-        await db.execute(
-            'INSERT IGNORE INTO users (username, email, password) VALUES (?, ?, ?)',
-            [u.username, u.email, hash]
-        );
-    }
-    console.log(`✔  Seeded ${users.length} users`);
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS balance (
+      id              INT AUTO_INCREMENT PRIMARY KEY,
+      amount_balance  DECIMAL(15,2) NOT NULL DEFAULT 0,
+      total_income    DECIMAL(15,2) NOT NULL DEFAULT 0,
+      total_expense   DECIMAL(15,2) NOT NULL DEFAULT 0,
+      date_created    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      snapshot_type   ENUM('live','daily') NOT NULL DEFAULT 'daily'
+    )
+  `);
+  console.log('✔  Table: balance');
 
-    // ── Seed chapters ───────────────────────────────────────────────────────────
+  // ── Reference data ─────────────────────────────────────────────────────────
 
-    const chapters = [
-        { name: 'Introduction to Node.js', description: 'Fundamentals of Node.js runtime, event loop, and modules.', chapter_type: 'lecture', status: 'active' },
-        { name: 'Express.js Basics', description: 'Building RESTful APIs with Express – routing, middleware, and error handling.', chapter_type: 'lecture', status: 'active' },
-        { name: 'MySQL & Relational DBs', description: 'Database design, SQL queries, joins, and transactions.', chapter_type: 'lab', status: 'active' },
-        { name: 'Authentication & JWT', description: 'User auth with bcrypt password hashing and JSON Web Tokens.', chapter_type: 'tutorial', status: 'active' },
-        { name: 'Deployment & DevOps', description: 'Containerising apps with Docker and deploying to cloud platforms.', chapter_type: 'workshop', status: 'active' },
-        { name: 'React Fundamentals', description: 'Components, props, state, and hooks in React 19.', chapter_type: 'lecture', status: 'active' },
-        { name: 'REST API Design', description: 'Best practices for designing clean and scalable REST APIs.', chapter_type: 'seminar', status: 'active' },
-        { name: 'SQL Lab: Joins & Indexes', description: 'Hands-on SQL exercises covering joins, sub-queries and indexing.', chapter_type: 'lab', status: 'archived' },
-    ];
+  const incomeTypes = [
+    ['Pocket Money', 'Personal allowance or pocket money'],
+    ['Gigs', 'Income from freelance or gig work'],
+    ['Salary', 'Regular employment salary'],
+    ['Gifts', 'Money received as gifts'],
+  ];
+  for (const [name, desc] of incomeTypes) {
+    await db.execute('INSERT IGNORE INTO income_type (name, description) VALUES (?, ?)', [name, desc]);
+  }
+  console.log(`✔  Seeded ${incomeTypes.length} income types`);
 
-    for (const c of chapters) {
-        await db.execute(
-            'INSERT IGNORE INTO chapters (name, description, chapter_type, status) VALUES (?, ?, ?, ?)',
-            [c.name, c.description, c.chapter_type, c.status]
-        );
-    }
-    console.log(`✔  Seeded ${chapters.length} chapters`);
+  const expenseTypes = [
+    ['Luxury', 'Non-essential luxury spending'],
+    ['Necessity', 'Essential day-to-day expenses'],
+  ];
+  for (const [name, desc] of expenseTypes) {
+    await db.execute('INSERT IGNORE INTO expense_type (name, description) VALUES (?, ?)', [name, desc]);
+  }
+  console.log(`✔  Seeded ${expenseTypes.length} expense types`);
 
-    // ── Assign users to chapters ────────────────────────────────────────────────
+  // ── Demo users ─────────────────────────────────────────────────────────────
 
-    const [allUsers] = await db.execute('SELECT id FROM users    ORDER BY id');
-    const [allChapters] = await db.execute('SELECT id FROM chapters ORDER BY id');
+  const demoPass = await bcrypt.hash('password123', 10);
+  await db.execute(
+    'INSERT IGNORE INTO users (username, email, password) VALUES (?, ?, ?)',
+    ['demo', 'demo@walletwise.app', demoPass]
+  );
+  await db.execute(
+    'INSERT IGNORE INTO users (username, email, password) VALUES (?, ?, ?)',
+    ['alice', 'alice@walletwise.app', demoPass]
+  );
+  console.log('✔  Seeded 2 demo users  (password: password123)');
 
-    // alice  → chapters 1, 2, 3
-    // bob    → chapters 2, 4
-    // charlie → chapters 1, 3, 5
-    // diana  → all chapters
-    const assignments = [
-        [0, 0], [0, 1], [0, 2],
-        [1, 1], [1, 3],
-        [2, 0], [2, 2], [2, 4],
-        [3, 0], [3, 1], [3, 2], [3, 3], [3, 4],
-    ];
+  // ── Demo income records ────────────────────────────────────────────────────
 
-    let assigned = 0;
-    for (const [ui, ci] of assignments) {
-        if (allUsers[ui] && allChapters[ci]) {
-            await db.execute(
-                'INSERT IGNORE INTO user_chapters (user_id, chapter_id) VALUES (?, ?)',
-                [allUsers[ui].id, allChapters[ci].id]
-            );
-            assigned++;
-        }
-    }
-    console.log(`✔  Assigned users to chapters (${assigned} memberships)\n`);
+  const [[salary]] = await db.execute("SELECT id FROM income_type WHERE name = 'Salary'");
+  const [[gigs]] = await db.execute("SELECT id FROM income_type WHERE name = 'Gigs'");
+  const [[pocket]] = await db.execute("SELECT id FROM income_type WHERE name = 'Pocket Money'");
+  const [[gifts]] = await db.execute("SELECT id FROM income_type WHERE name = 'Gifts'");
 
-    console.log('Seed complete! You can log in with any seeded user:');
-    console.log('  username: alice | bob | charlie | diana');
-    console.log('  password: password123');
+  const incomeRows = [
+    [1500000, salary.id, '2026-03-01'],
+    [250000, gigs.id, '2026-03-05'],
+    [50000, pocket.id, '2026-03-10'],
+    [100000, gifts.id, '2026-03-15'],
+    [1500000, salary.id, '2026-02-01'],
+    [180000, gigs.id, '2026-02-12'],
+  ];
+  for (const [amount, type_id, date] of incomeRows) {
+    await db.execute(
+      'INSERT INTO income (amount, income_type_id, date_created) VALUES (?, ?, ?)',
+      [amount, type_id, date]
+    );
+  }
+  console.log(`✔  Seeded ${incomeRows.length} income records`);
 
-    await db.end();
+  // ── Demo expense records ───────────────────────────────────────────────────
+
+  const [[luxury]] = await db.execute("SELECT id_expense FROM expense_type WHERE name = 'Luxury'");
+  const [[necessity]] = await db.execute("SELECT id_expense FROM expense_type WHERE name = 'Necessity'");
+
+  const expenseRows = [
+    ['Rent', 400000, 400000, necessity.id_expense, '2026-03-01'],
+    ['Groceries', 150000, 143000, necessity.id_expense, '2026-03-03'],
+    ['New Shoes', 80000, 75000, luxury.id_expense, '2026-03-07'],
+    ['Electricity', 50000, 48000, necessity.id_expense, '2026-03-10'],
+    ['Restaurant', 60000, 62000, luxury.id_expense, '2026-03-14'],
+    ['Internet', 45000, 45000, necessity.id_expense, '2026-03-15'],
+    ['Rent (Feb)', 400000, 400000, necessity.id_expense, '2026-02-01'],
+    ['Groceries (Feb)', 150000, 138000, necessity.id_expense, '2026-02-05'],
+  ];
+  for (const [name, amt, expenditure, type_id, date] of expenseRows) {
+    await db.execute(
+      'INSERT INTO expense (name_expense, amount, amount_expenditure, id_expense, date_created) VALUES (?, ?, ?, ?, ?)',
+      [name, amt, expenditure, type_id, date]
+    );
+  }
+  console.log(`✔  Seeded ${expenseRows.length} expense records`);
+
+  // ── Compute and seed live balance ──────────────────────────────────────────
+
+  const [[{ ti }]] = await db.execute('SELECT COALESCE(SUM(amount), 0) AS ti FROM income');
+  const [[{ te }]] = await db.execute('SELECT COALESCE(SUM(amount_expenditure), 0) AS te FROM expense');
+  const bal = Number(ti) - Number(te);
+
+  await db.execute(
+    "INSERT INTO balance (amount_balance, total_income, total_expense, snapshot_type) VALUES (?, ?, ?, 'live') ON DUPLICATE KEY UPDATE amount_balance=VALUES(amount_balance), total_income=VALUES(total_income), total_expense=VALUES(total_expense)",
+    [bal, ti, te]
+  );
+  await db.execute(
+    "INSERT INTO balance (amount_balance, total_income, total_expense, snapshot_type) VALUES (?, ?, ?, 'daily')",
+    [bal, ti, te]
+  );
+
+  console.log(`✔  Live balance: ${bal.toLocaleString()} (income=${Number(ti).toLocaleString()}, expense=${Number(te).toLocaleString()})`);
+  console.log('\n═══════════════════════════════════════════════════════');
+  console.log(' WalletWise seed complete!');
+  console.log(' Login →  username: demo   password: password123');
+  console.log('═══════════════════════════════════════════════════════');
+
+  await db.end();
 }
 
 seed().catch((err) => {
-    console.error('Seed failed:', err.message);
-    process.exit(1);
+  console.error('Seed failed:', err.message);
+  process.exit(1);
 });

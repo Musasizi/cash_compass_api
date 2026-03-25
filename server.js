@@ -1,77 +1,59 @@
 /**
- * server.js – Application entry point
- *
- * This file:
- *  1. Creates the Express app
- *  2. Attaches global middleware (JSON body parser, CORS)
- *  3. Mounts route groups under /api
- *  4. Starts the HTTP server
- *
- * KEY CONCEPT – Middleware
- * Middleware functions run BEFORE your route handlers.  Express processes
- * them in the order they are registered with app.use().
+ * server.js – WalletWise API entry point
  */
 
 const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 
-// Load environment variables from the .env file into process.env
 dotenv.config();
 
-// Import the three route groups (each is its own Express Router)
+// ── Routes ────────────────────────────────────────────────────────────────────
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
-const chapterRoutes = require('./routes/chapterRoutes');
+const referenceDataRoutes = require('./routes/referenceDataRoutes');
+const incomeRoutes = require('./routes/incomeRoutes');
+const expenseRoutes = require('./routes/expenseRoutes');
+const balanceRoutes = require('./routes/balanceRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 
-// ─── Create Express Application ──────────────────────────────────────────────
+// ── Cron jobs ─────────────────────────────────────────────────────────────────
+require('./jobs/dailyBalanceSnapshot');
+
 const app = express();
 
-// ─── Global Middleware ────────────────────────────────────────────────────────
-
-// Parse incoming JSON request bodies automatically so controllers can read
-// req.body as a plain JavaScript object.
+// ── Global Middleware ─────────────────────────────────────────────────────────
 app.use(express.json());
-
-// Allow requests from other origins (e.g. the React dev server on port 5173).
-// In production you would whitelist specific origins instead of '*'.
 app.use(cors());
 
-// ─── Health-Check Route ───────────────────────────────────────────────────────
-// A simple GET / that lets you quickly verify the server is alive.
-// Try: curl http://localhost:3000/
+// ── Health check ──────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
-  res.json({ message: 'Academia API is running 🚀', status: 'ok' });
+  res.json({ message: 'WalletWise API is running 🚀', status: 'ok' });
 });
 
-// ─── API Routes ───────────────────────────────────────────────────────────────
-// All routes are prefixed with /api to namespace them away from other paths.
-//
-//  /api/register  POST  → authRoutes
-//  /api/login     POST  → authRoutes
-//  /api/users     GET / PUT / DELETE  → userRoutes   (protected)
-//  /api/chapters  GET / POST / PUT / DELETE → chapterRoutes
+// ── API Routes ────────────────────────────────────────────────────────────────
 app.use('/api', authRoutes);
 app.use('/api', userRoutes);
-app.use('/api', chapterRoutes);
+app.use('/api', referenceDataRoutes);
+app.use('/api', incomeRoutes);
+app.use('/api', expenseRoutes);
+app.use('/api', balanceRoutes);
+app.use('/api', dashboardRoutes);
 
-// ─── 404 Handler ─────────────────────────────────────────────────────────────
-// Any request that does not match a registered route falls through to here.
+// ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((req, res) => {
-  res.status(404).json({ error: `Route ${req.method} ${req.path} not found.` });
+  res.status(404).json({ success: false, message: `Route ${req.method} ${req.path} not found.` });
 });
 
-// ─── Global Error Handler ─────────────────────────────────────────────────────
-// Express recognises a function with FOUR parameters as an error handler.
-// Call next(err) from any middleware/controller to land here.
+// ── Global error handler ──────────────────────────────────────────────────────
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err.message);
-  res.status(500).json({ error: 'Internal server error.' });
+  res.status(500).json({ success: false, message: 'Internal server error.' });
 });
 
-// ─── Start Server ─────────────────────────────────────────────────────────────
+// ── Start ─────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`WalletWise server running on port ${PORT}`);
 });
