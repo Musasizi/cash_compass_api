@@ -94,8 +94,8 @@ const Expense = {
         const params = [];
         // Each condition is only added if the filter value was provided
         if (type_id) { sql += ' AND e.id_expense = ?'; params.push(type_id); }
-        if (from)    { sql += ' AND e.date_created >= ?'; params.push(from); }
-        if (to)      { sql += ' AND e.date_created <= ?'; params.push(to); }
+        if (from) { sql += ' AND e.date_created >= ?'; params.push(from); }
+        if (to) { sql += ' AND e.date_created <= ?'; params.push(to); }
         sql += ' ORDER BY e.date_created DESC, e.id DESC';
         return db.query(sql, params);
     },

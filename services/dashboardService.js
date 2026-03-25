@@ -57,7 +57,7 @@ const getDashboardStats = async ({ from, to } = {}) => {
         const parts = [];
         const params = [];
         if (from) { parts.push(`${alias}.date_created >= ?`); params.push(from); }
-        if (to)   { parts.push(`${alias}.date_created <= ?`); params.push(to);   }
+        if (to) { parts.push(`${alias}.date_created <= ?`); params.push(to); }
         return { clause: parts.length ? 'AND ' + parts.join(' AND ') : '', params };
     };
 
@@ -159,9 +159,9 @@ const getDashboardStats = async ({ from, to } = {}) => {
     //   then reverse in JS so the chart goes chronologically left-to-right.
     return {
         balance: liveBalance ?? { amount_balance: 0, total_income: 0, total_expense: 0 },
-        totalIncome:      Number(incomeTotal.total),
-        totalExpense:     Number(expenseTotal.total),
-        incomeBreakdown:  incomeByType.map(r  => ({ name: r.name,  total: Number(r.total) })),
+        totalIncome: Number(incomeTotal.total),
+        totalExpense: Number(expenseTotal.total),
+        incomeBreakdown: incomeByType.map(r => ({ name: r.name, total: Number(r.total) })),
         expenseBreakdown: expenseByType.map(r => ({ name: r.name, total: Number(r.total) })),
         trend: trend.reverse().map(r => ({ date: r.date, amount_balance: Number(r.amount_balance) })),
     };
