@@ -1,5 +1,5 @@
 /**
- * server.js – WalletWise API entry point
+ * server.js – Cash Compass API entry point
  */
 
 const express = require('express');
@@ -28,7 +28,7 @@ app.use(cors());
 
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
-  res.json({ message: 'WalletWise API is running 🚀', status: 'ok' });
+  res.json({ message: 'Cash Compass API is running 🚀', status: 'ok' });
 });
 
 // ── API Routes ────────────────────────────────────────────────────────────────
@@ -55,5 +55,5 @@ app.use((err, req, res, next) => {
 // ── Start ─────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`WalletWise server running on port ${PORT}`);
+  console.log(`Cash Compass server running on port ${PORT}`);
 });

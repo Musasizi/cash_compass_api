@@ -1,7 +1,7 @@
 {
-  "name": "walletwise-api",
+  "name": "cashcompass-api",
   "version": "2.0.0",
-  "description": "WalletWise Personal Finance Tracker API",
+  "description": "Cash Compass Personal Finance Tracker API",
   "main": "server.js",
   "scripts": {
     "start": "nodemon server.js",

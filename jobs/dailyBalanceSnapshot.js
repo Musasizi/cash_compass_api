@@ -23,7 +23,7 @@
  *
  *   '0 0 * * *'  → minute 0, hour 0, every day = MIDNIGHT every day
  *   '0 8 * * *'  → minute 0, hour 8, every day = 8 AM every day
- *   '*/5 * * * *'→ every 5 minutes
+ *   '* /5 * * * *'→ every 5 minutes
  *
  * KEY CONCEPT – Why snapshot the balance?
  *

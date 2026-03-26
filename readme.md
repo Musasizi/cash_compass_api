@@ -1,8 +1,8 @@
-# WalletWise API — Backend
+# Cash Compass API — Backend
 
 > **Teaching Project** | Express.js · MySQL · JWT · REST API Design
 >
-> This is the backend for the **WalletWise Personal Finance Tracker**.
+> This is the backend for the **Cash Compass Personal Finance Tracker**.
 > It is intentionally written to be read — every file has detailed comments
 > explaining *why* the code is written the way it is, not just *what* it does.
 
@@ -87,7 +87,7 @@ HTTP Request
 ## Project Structure
 
 ```
-walletwise_api/
+cashcompass_api/
 │
 ├── .env                        ← Secret config (DB password, JWT key) — NEVER commit this
 ├── server.js                   ← App entry point — wires everything together
@@ -171,8 +171,8 @@ npm --version    # should print  9.x.x or higher
 ### 1 — Clone the repository
 
 ```bash
-git clone https://github.com/musasizi/walletwise.git
-cd walletwise/walletwise_api
+git clone https://github.com/musasizi/cashcompass.git
+cd cashcompass/cashcompass_api
 ```
 
 ### 2 — Install Node.js dependencies
@@ -194,7 +194,7 @@ mysql -u root -p
 Then run:
 
 ```sql
-CREATE DATABASE walletwise_db
+CREATE DATABASE cashcompass_db
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
@@ -207,7 +207,7 @@ EXIT;
 ### 4 — Create the `.env` file
 
 Copy the example below into a new file called **`.env`** (note the dot at the
-start) in the `walletwise_api/` folder:
+start) in the `cashcompass_api/` folder:
 
 ```env
 # Database — match these to your MySQL setup
@@ -215,7 +215,7 @@ DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=your_mysql_password_here
-DB_DATABASE=walletwise_db
+DB_DATABASE=cashcompass_db
 
 # JWT — change this to any long random string; keep it secret!
 JWT_SECRET=change_me_to_a_long_random_string
@@ -237,7 +237,7 @@ node scripts/seed.js
 
 Expected output:
 ```
-Connected to database. Running WalletWise seed…
+Connected to database. Running Cash Compass seed…
 ✔  Table: users
 ✔  Table: income_type
 ✔  Table: expense_type
@@ -251,7 +251,7 @@ Connected to database. Running WalletWise seed…
 ✔  Seeded 8 expense records
 ✔  Live balance: 2,269,000
 
-WalletWise seed complete!
+Cash Compass seed complete!
 Login → username: demo   password: password123
 ```
 
@@ -271,13 +271,13 @@ npm start
 You should see:
 ```
 MySQL connected
-WalletWise server running on port 3000
+Cash Compass server running on port 3000
 Daily balance snapshot job scheduled.
 ```
 
 Visit `http://localhost:3000/` in your browser — you should see:
 ```json
-{ "message": "WalletWise API is running 🚀", "status": "ok" }
+{ "message": "Cash Compass API is running 🚀", "status": "ok" }
 ```
 
 ---
@@ -290,7 +290,7 @@ Visit `http://localhost:3000/` in your browser — you should see:
 | `DB_PORT` | MySQL port | `3306` |
 | `DB_USER` | MySQL username | `root` |
 | `DB_PASSWORD` | MySQL password | `secret` |
-| `DB_DATABASE` | Database name | `walletwise_db` |
+| `DB_DATABASE` | Database name | `cashcompass_db` |
 | `JWT_SECRET` | Secret used to sign tokens | any long random string |
 | `PORT` | Port the Express server listens on | `3000` |
 
@@ -609,7 +609,7 @@ This means the balance is always mathematically correct — never drifts.
 
 | Error | Cause | Fix |
 |-------|-------|-----|
-| `Unknown database 'walletwise_db'` | Database not created yet | Run `mysql -u root -p -e "CREATE DATABASE walletwise_db;"` |
+| `Unknown database 'cashcompass_db'` | Database not created yet | Run `mysql -u root -p -e "CREATE DATABASE cashcompass_db;"` |
 | `ER_ACCESS_DENIED_ERROR` | Wrong DB password in `.env` | Check `DB_PASSWORD` in `.env` |
 | `Cannot find module 'joi'` | Dependencies not installed | Run `npm install` |
 | `401 Access denied. No token provided.` | Missing Authorization header | Add `Authorization: Bearer <token>` to your request |

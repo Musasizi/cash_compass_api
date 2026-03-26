@@ -1,5 +1,5 @@
 /**
- * scripts/seed.js – WalletWise database schema bootstrap + seed data
+ * scripts/seed.js – Cash Compass database schema bootstrap + seed data
  *
  * Run with:  npm run seed
  *
@@ -21,7 +21,7 @@ async function seed() {
     port: Number(process.env.DB_PORT) || 3306,
   });
 
-  console.log('Connected to database. Running WalletWise seed…\n');
+  console.log('Connected to database. Running Cash Compass seed…\n');
 
   // ── Schema ─────────────────────────────────────────────────────────────────
 
@@ -117,11 +117,11 @@ async function seed() {
   const demoPass = await bcrypt.hash('password123', 10);
   await db.execute(
     'INSERT IGNORE INTO users (username, email, password) VALUES (?, ?, ?)',
-    ['demo', 'demo@walletwise.app', demoPass]
+    ['demo', 'demo@cashcompass.app', demoPass]
   );
   await db.execute(
     'INSERT IGNORE INTO users (username, email, password) VALUES (?, ?, ?)',
-    ['alice', 'alice@walletwise.app', demoPass]
+    ['alice', 'alice@cashcompass.app', demoPass]
   );
   console.log('✔  Seeded 2 demo users  (password: password123)');
 
@@ -188,7 +188,7 @@ async function seed() {
 
   console.log(`✔  Live balance: ${bal.toLocaleString()} (income=${Number(ti).toLocaleString()}, expense=${Number(te).toLocaleString()})`);
   console.log('\n═══════════════════════════════════════════════════════');
-  console.log(' WalletWise seed complete!');
+  console.log(' Cash Compass seed complete!');
   console.log(' Login →  username: demo   password: password123');
   console.log('═══════════════════════════════════════════════════════');
 
